@@ -5,7 +5,7 @@ bot = telebot.TeleBot("6571068957:AAEwA9k4Jule6IiL2L6_aF62zu8c_tSbivc")
 # объект для расшифровки координат
 geolocator = Nominatim(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15")
 
-@bot.message_handler(commands=["start"])ћ
+@bot.message_handler(commands=["start"])
 def start(message):
     user_id = message.from_user.id
     bot.send_message(user_id, "Здравствуйте! "
