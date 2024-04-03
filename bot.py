@@ -1,7 +1,7 @@
 import telebot
 import buttons as bt
 from geopy.geocoders import Nominatim
-bot = telebot.TeleBot("6571068957:AAEwA9k4Jule6IiL2L6_aF62zu8c_tSbivc")
+bot = telebot.TeleBot("")
 # объект для расшифровки координат
 geolocator = Nominatim(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15")
 
