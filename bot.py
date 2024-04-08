@@ -2,12 +2,15 @@ import telebot
 import buttons as bt
 from geopy.geocoders import Nominatim
 import database as db
-bot = telebot.TeleBot("6571068957:AAEwA9k4Jule6IiL2L6_aF62zu8c_tSbivc")
+bot = telebot.TeleBot("")
 # объект для расшифровки координат
-geolocator = Nominatim(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15")
-# db.add_product(pr_name= "Чизбургер2", pr_quantity=0, pr_price=20000.0, pr_des="лучший", pr_photo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzolUu5EuGCYGg--0U4LV8vuQ0w1nHKxvMjiPgIqxCSA&s")
+#geolocator = Nominatim(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
+# db.add_product(pr_name= "Кола", pr_quantity=10, pr_price=20000.0, pr_des="лучший", pr_photo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzolUu5EuGCYGg--0U4LV8vuQ0w1nHKxvMjiPgIqxCSA&s")
 # print(db.get_all_products())
 # print(db.get_pr_id_name())
+users = {}
+
+
 @bot.message_handler(commands=["start"])
 def start(message):
     user_id = message.from_user.id
@@ -59,21 +62,24 @@ def main_menu(message):
 
 def get_location(message):
     user_id = message.from_user.id
-    if message.location:
+    # if message.location:
+    if message:
         # получаем широту и долготу
-        longitude = message.location.longitude
-        latitude = message.location.latitude
+        # longitude = message.location.longitude
+        # latitude = message.location.latitude
         # преобразуем широту и долготу в адрес
-        address = geolocator.reverse((latitude, longitude)).address
-        bot.send_message(user_id, f"Ваш адрес {address}")
-        bot.register_next_step_handler(message, products_menu)
+        # address = geolocator.reverse((latitude, longitude)).address
+        actual_products = db.get_pr_id_name()
+        bot.send_message(user_id, "Выберите продукт", reply_markup=bt.all_products(actual_products))
     else:
         bot.send_message(user_id, "Отправьте локацию через кнопку")
-        bot.register_next_step_handler(message, get_location)
+        # TODO ne rabotaet
+        # bot.register_next_step_handler(message, get_location)
+        bot.register_next_step_handler(message, products_menu)
 
 def products_menu(message):
     user_id = message.from_user.id
-    bot.send_message(user_id, "Выберите продукт")
+    bot.send_message(user_id, "Выберите продукт", reply_markup=bt.all_products())
 
 def feedback(message):
     user_id = message.from_user.id
@@ -83,4 +89,50 @@ def feedback(message):
                  f"<b>Текст отзыва</b>: {feedback_text}")
     bot.send_message(user_id, "Спасибо за отзыв!")
     bot.send_message(admins_group_id, full_text, parse_mode="HTML")
+
+@bot.callback_query_handler(lambda call: call.data in ["back", "user_cart", "plus", "minus", "none", "to_cart"])
+def for_call(call):
+    user_id = call.message.chat.id
+    if call.data == "back":
+        bot.delete_message(user_id, call.message.message_id)
+        bot.send_message(user_id, "Отправьте геолокацию или выберите адрес",
+                         reply_markup=bt.location_kb())
+        bot.register_next_step_handler(call.message, get_location)
+    elif call.data == "user_cart":
+        pass
+    elif call.data == "plus":
+        current_ammount = users[user_id]["pr_count"]
+        users[user_id]["pr_count"] += 1
+        bot.edit_message_reply_markup(chat_id=user_id, message_id=call.message.id,
+                                      reply_markup=bt.exact_product(current_ammount, "plus"))
+    elif call.data == "minus":
+        current_ammount = users[user_id]["pr_count"]
+        if current_ammount > 1:
+            users[user_id]["pr_count"] -= 1
+            bot.edit_message_reply_markup(chat_id=user_id, message_id=call.message.id,
+                                      reply_markup=bt.exact_product(current_ammount, "minus"))
+        else:
+            pass
+    elif call.data == "none":
+        pass
+    elif call.data == "to_cart":
+        db.add_to_cart(user_id, users[user_id]["pr_id"], users[user_id]["pr_name"], users[user_id]["pr_count"],
+                       users[user_id]["pr_price"])
+        users.pop(user_id)
+        bot.delete_message(chat_id=user_id, message_id=call.message.id)
+        bot.send_message(user_id, "Продукт успешно добавлен в корзину")
+        actual_products = db.get_pr_id_name()
+        bot.send_message(user_id, "Выберите продукт", reply_markup=bt.all_products(actual_products))
+
+@bot.callback_query_handler(lambda call: int(call.data) in db.get_all_id())
+def calls_for_products(call):
+    user_id = call.message.chat.id
+    product = db.get_exact_produdct(int(call.data))
+    bot.delete_message(user_id, call.message.id)
+    users[user_id] = {"pr_id": call.data, "pr_name": product[0], "pr_count": 1, "pr_price": product[1]}
+    bot.send_photo(user_id, photo=product[3], caption=f"{product[0]}\n"
+                                                      f"Описание: {product[2]}\n"
+                                                      f"Цена: {product[1]}\n"
+                                                      f"Выбрите количество: ", reply_markup=bt.exact_product())
+
 bot.polling(non_stop=True)
