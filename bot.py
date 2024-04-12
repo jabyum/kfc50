@@ -2,7 +2,7 @@ import telebot
 import buttons as bt
 from geopy.geocoders import Nominatim
 import database as db
-bot = telebot.TeleBot("")
+bot = telebot.TeleBot("6571068957:AAEwA9k4Jule6IiL2L6_aF62zu8c_tSbivc")
 # объект для расшифровки координат
 #geolocator = Nominatim(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
 # db.add_product(pr_name= "Кола", pr_quantity=10, pr_price=20000.0, pr_des="лучший", pr_photo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzolUu5EuGCYGg--0U4LV8vuQ0w1nHKxvMjiPgIqxCSA&s")
@@ -90,7 +90,8 @@ def feedback(message):
     bot.send_message(user_id, "Спасибо за отзыв!")
     bot.send_message(admins_group_id, full_text, parse_mode="HTML")
 
-@bot.callback_query_handler(lambda call: call.data in ["back", "user_cart", "plus", "minus", "none", "to_cart"])
+@bot.callback_query_handler(lambda call: call.data in ["back", "user_cart", "plus", "minus",
+                                                       "none", "to_cart"])
 def for_call(call):
     user_id = call.message.chat.id
     if call.data == "back":
@@ -99,7 +100,16 @@ def for_call(call):
                          reply_markup=bt.location_kb())
         bot.register_next_step_handler(call.message, get_location)
     elif call.data == "user_cart":
-        pass
+        bot.delete_message(user_id, call.message.message_id)
+        user_cart = db.get_user_cart(user_id)
+        full_text = f"Ваша корзина \n\n"
+        total_amount = 0
+        for i in user_cart:
+            full_text += f"{i[0]} x{i[1]} = {i[2]}\n"
+            total_amount += i[2]
+        full_text += f"\n\nИтоговая сумма {total_amount}"
+        cart = db.get_cart_id_name(user_id)
+        bot.send_message(user_id, full_text, reply_markup=bt.get_cart_kb(cart))
     elif call.data == "plus":
         current_ammount = users[user_id]["pr_count"]
         users[user_id]["pr_count"] += 1
