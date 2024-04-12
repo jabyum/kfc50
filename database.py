@@ -112,10 +112,10 @@ def delete_user_cart(user_id):
     sql = connection.cursor()
     sql.execute("DELETE FROM cart WHERE user_id=?;", (user_id, ))
     connection.commit()
-def delete_exact_product_from_cart(user_id, pr_id):
+def delete_exact_product_from_cart(user_id, pr_name):
     connection = sqlite3.connect("kfc.db")
     sql = connection.cursor()
-    sql.execute("DELETE FROM cart WHERE user_id=? and pr_id=?;", (user_id, pr_id))
+    sql.execute("DELETE FROM cart WHERE user_id=? and pr_name=?;", (user_id, pr_name))
     connection.commit()
 def get_cart_id_name(user_id):
     connection = sqlite3.connect("kfc.db")

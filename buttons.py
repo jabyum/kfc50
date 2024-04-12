@@ -11,10 +11,9 @@ def phone_bt():
 def main_menu_kb():
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
     products = types.KeyboardButton("🛒 Начать заказ")
-    cart = types.KeyboardButton("🛍 Корзина")
     feedback = types.KeyboardButton("Отзыв")
     settings = types.KeyboardButton("Настройки")
-    kb.add(products, cart, feedback, settings)
+    kb.add(products, feedback, settings)
     return kb
 def location_kb():
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -61,7 +60,7 @@ def get_cart_kb(cart):
     back = types.InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu")
     order = types.InlineKeyboardButton(text="Оформить заказ", callback_data="order")
     # динамичные
-    products = [types.InlineKeyboardButton(text=f"❌ {i[0]}", callback_data=f"{i[1]}") for i in cart]
+    products = [types.InlineKeyboardButton(text=f"❌ {i[0]}", callback_data=f"{i[0]}") for i in cart]
     kb.add(clear,back,order)
     kb.add(*products)
     return kb
